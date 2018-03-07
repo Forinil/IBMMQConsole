@@ -1,10 +1,10 @@
 package net.sf.juffrou.mq.controller;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import com.ibm.mq.MQException;
+import com.ibm.mq.MQQueue;
+import com.ibm.mq.MQQueueManager;
+import com.ibm.mq.constants.MQConstants;
+import com.ibm.mq.pcf.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -15,14 +15,10 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
-
-import javax.annotation.Resource;
-
 import net.sf.juffrou.mq.dom.QueueDescriptor;
 import net.sf.juffrou.mq.ui.Main;
 import net.sf.juffrou.mq.ui.NotificationPopup;
 import net.sf.juffrou.mq.ui.SpringFxmlLoader;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,240 +26,233 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.ibm.mq.MQException;
-import com.ibm.mq.MQQueue;
-import com.ibm.mq.MQQueueManager;
-import com.ibm.mq.constants.MQConstants;
-import com.ibm.mq.pcf.CMQC;
-import com.ibm.mq.pcf.CMQCFC;
-import com.ibm.mq.pcf.PCFConstants;
-import com.ibm.mq.pcf.PCFMessage;
-import com.ibm.mq.pcf.PCFMessageAgent;
+import javax.annotation.Resource;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class ListQueues {
 
-	private static final Logger log = LoggerFactory.getLogger(ListQueues.class);
+    private static final Logger log = LoggerFactory.getLogger(ListQueues.class);
 
-	private Stage stage;
+    private Stage stage;
 
-	@FXML
-	private TableView<QueueDescriptor> table;
-	
-	@FXML
-	private MenuItem miListenToNewMessages;
+    @FXML
+    private TableView<QueueDescriptor> table;
 
-	@Resource(name = "mqQueueManagerOptions")
-	private Map<String, Object> mqQueueManagerOptions;
+    @FXML
+    private MenuItem miListenToNewMessages;
 
-	@Value("${broker_hostname}")
-	private String brokerHostname;
+    @Resource(name = "mqQueueManagerOptions")
+    private Map<String, Object> mqQueueManagerOptions;
 
-	@Value("${broker_port}")
-	private Integer brokerPort;
+    /*@Value("${broker_hostname}")
+    private String brokerHostname;
 
-	@Value("${broker_channel}")
-	private String brokerChannel;
+    @Value("${broker_port}")
+    private Integer brokerPort;
 
-	@Autowired
-	private MessageListenerController messageListenerController;
+    @Value("${broker_channel}")
+    private String brokerChannel;*/
 
-	@Autowired
-	@Qualifier("mqQueueManager")
-	private MQQueueManager qm;
+    @Autowired
+    private MessageListenerController messageListenerController;
 
-	public void initialize() {
-		table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+    @Autowired
+    @Qualifier("mqQueueManager")
+    private MQQueueManager qm;
 
-		ObservableList<QueueDescriptor> rows = FXCollections.observableArrayList();
-		rows.addAll(getQueues());
-		table.setItems(rows);
-	}
+    public void initialize() {
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-	@FXML
-	private void listenToNewMessagesAction(ActionEvent event) {
-		ObservableList<TablePosition> cells = table.getSelectionModel().getSelectedCells();
-		for (TablePosition<?, ?> cell : cells) {
-			QueueDescriptor queue = table.getItems().get(cell.getRow());
-			if(messageListenerController.isCurrentListeningQueue(queue.getName()))
-				messageListenerController.stopMessageListener();
-			else
-				messageListenerController.startMessageListener(getStage(), queue.getName());
-		}
+        ObservableList<QueueDescriptor> rows = FXCollections.observableArrayList();
+        rows.addAll(getQueues());
+        table.setItems(rows);
+    }
 
-	}
-	
-	@FXML
-	private void contextMenuOnShowingAction() {
-		String listenerText = "Listen to New Messages";
-		ObservableList<TablePosition> cells = table.getSelectionModel().getSelectedCells();
-		for (TablePosition<?, ?> cell : cells) {
-			QueueDescriptor queue = table.getItems().get(cell.getRow());
-			if(messageListenerController.isCurrentListeningQueue(queue.getName()))
-				listenerText = "Stop Listening to New Messages";
-		}
-		miListenToNewMessages.setText(listenerText);
-	}
-	
-	@FXML
-	private void toggleShare(ActionEvent event) {
+    @FXML
+    private void listenToNewMessagesAction(ActionEvent event) {
+        ObservableList<TablePosition> cells = table.getSelectionModel().getSelectedCells();
+        for (TablePosition<?, ?> cell : cells) {
+            QueueDescriptor queue = table.getItems().get(cell.getRow());
+            if (messageListenerController.isCurrentListeningQueue(queue.getName()))
+                messageListenerController.stopMessageListener();
+            else
+                messageListenerController.startMessageListener(getStage(), queue.getName());
+        }
 
-		ObservableList<TablePosition> cells = table.getSelectionModel().getSelectedCells();
-		for (TablePosition<?, ?> cell : cells) {
-			QueueDescriptor queue = table.getItems().get(cell.getRow());
-			queue.setIsSherable(new Boolean( ! queue.getIsSherable().booleanValue() ));
-			if( ! doMQSet(queue))
-				queue.setIsSherable(new Boolean( ! queue.getIsSherable().booleanValue() ));
-		}
+    }
 
-	}
+    @FXML
+    private void contextMenuOnShowingAction() {
+        String listenerText = "Listen to New Messages";
+        ObservableList<TablePosition> cells = table.getSelectionModel().getSelectedCells();
+        for (TablePosition<?, ?> cell : cells) {
+            QueueDescriptor queue = table.getItems().get(cell.getRow());
+            if (messageListenerController.isCurrentListeningQueue(queue.getName()))
+                listenerText = "Stop Listening to New Messages";
+        }
+        miListenToNewMessages.setText(listenerText);
+    }
 
-	@FXML
-	private void openMessageList(ActionEvent event) {
-		ObservableList<TablePosition> cells = table.getSelectionModel().getSelectedCells();
-		for (TablePosition<?, ?> cell : cells) {
-			QueueDescriptor queue = table.getItems().get(cell.getRow());
+    @FXML
+    private void toggleShare(ActionEvent event) {
 
-			SpringFxmlLoader springFxmlLoader = new SpringFxmlLoader(Main.applicationContext);
-			Parent root = (Parent) springFxmlLoader.load("/net/sf/juffrou/mq/ui/list-messages.fxml");
+        ObservableList<TablePosition> cells = table.getSelectionModel().getSelectedCells();
+        for (TablePosition<?, ?> cell : cells) {
+            QueueDescriptor queue = table.getItems().get(cell.getRow());
+            queue.setIsSherable(new Boolean(!queue.getIsSherable().booleanValue()));
+            if (!doMQSet(queue))
+                queue.setIsSherable(new Boolean(!queue.getIsSherable().booleanValue()));
+        }
 
-			ListMessages controller = springFxmlLoader.<ListMessages> getController();
-			controller.setQueueName(queue.getName());
-			controller.initialize();
+    }
 
-			Scene scene = new Scene(root, 768, 480);
-			Stage stage = new Stage();
-			stage.setScene(scene);
-			stage.setTitle(queue.getName() + " Messages");
-			stage.show();
+    @FXML
+    private void openMessageList(ActionEvent event) {
+        ObservableList<TablePosition> cells = table.getSelectionModel().getSelectedCells();
+        for (TablePosition<?, ?> cell : cells) {
+            QueueDescriptor queue = table.getItems().get(cell.getRow());
 
-			if (log.isDebugEnabled())
-				log.debug("Show messages in queue " + queue.getName());
-		}
-	}
+            SpringFxmlLoader springFxmlLoader = new SpringFxmlLoader(Main.applicationContext);
+            Parent root = (Parent) springFxmlLoader.load("/net/sf/juffrou/mq/ui/list-messages.fxml");
 
-	@FXML
-	private void sendMessage(ActionEvent event) {
-		ObservableList<TablePosition> cells = table.getSelectionModel().getSelectedCells();
-		for (TablePosition<?, ?> cell : cells) {
-			QueueDescriptor queue = table.getItems().get(cell.getRow());
+            ListMessages controller = springFxmlLoader.<ListMessages>getController();
+            controller.setQueueName(queue.getName());
+            controller.initialize();
 
-			SpringFxmlLoader springFxmlLoader = new SpringFxmlLoader(Main.applicationContext);
-			Parent root = (Parent) springFxmlLoader.load("/net/sf/juffrou/mq/ui/message-send.fxml");
+            Scene scene = new Scene(root, 768, 480);
+            Stage stage = new Stage();
+            stage.setScene(scene);
+            stage.setTitle(queue.getName() + " Messages");
+            stage.show();
 
-			MessageSendControler controller = springFxmlLoader.<MessageSendControler> getController();
-			controller.setQueueNameSend(queue.getName());
-			controller.setQueueDescriptors(table.getItems());
+            if (log.isDebugEnabled())
+                log.debug("Show messages in queue " + queue.getName());
+        }
+    }
 
-			Scene scene = new Scene(root, 768, 480);
-			Stage stage = new Stage();
-			stage.setScene(scene);
-			stage.setTitle("Send new message to queue " + queue.getName());
-			stage.show();
+    @FXML
+    private void sendMessage(ActionEvent event) {
+        ObservableList<TablePosition> cells = table.getSelectionModel().getSelectedCells();
+        for (TablePosition<?, ?> cell : cells) {
+            QueueDescriptor queue = table.getItems().get(cell.getRow());
 
-			if (log.isDebugEnabled())
-				log.debug("Send new message to queue " + queue.getName());
-		}
-	}
+            SpringFxmlLoader springFxmlLoader = new SpringFxmlLoader(Main.applicationContext);
+            Parent root = (Parent) springFxmlLoader.load("/net/sf/juffrou/mq/ui/message-send.fxml");
 
-	@FXML
-	private void refreshButtonAction(ActionEvent event) {
-		ObservableList<QueueDescriptor> rows = FXCollections.observableArrayList();
-		rows.addAll(getQueues());
-		table.setItems(rows);
-	}
-	
-	private boolean doMQSet(QueueDescriptor queueDescriptor) {
-		
-		try {
-			int shareability = queueDescriptor.getIsSherable().booleanValue() ? MQConstants.MQQA_SHAREABLE : MQConstants.MQQA_NOT_SHAREABLE;
-			MQQueue queue = qm.accessQueue(queueDescriptor.getName(), MQConstants.MQOO_SET);
-			queue.set(new int[] {MQConstants.MQIA_SHAREABILITY}, new int[] {shareability}, new byte[] {});
-			queue.close();
-			return true;
-			
-		} catch (MQException mqe) {
-			if (log.isErrorEnabled())
-				log.error(mqe + ": " + PCFConstants.lookupReasonCode(mqe.reasonCode));
-			NotificationPopup popup = new NotificationPopup(getStage());
-			popup.display(mqe + ": " + PCFConstants.lookupReasonCode(mqe.reasonCode));
-			return false;
-		}
-	}
-	
-	private List<QueueDescriptor> getQueues() {
+            MessageSendControler controller = springFxmlLoader.<MessageSendControler>getController();
+            controller.setQueueNameSend(queue.getName());
+            controller.setQueueDescriptors(table.getItems());
 
-		List<QueueDescriptor> queueList = new ArrayList<QueueDescriptor>();
-		try {
-			PCFMessageAgent agent;
+            Scene scene = new Scene(root, 768, 480);
+            Stage stage = new Stage();
+            stage.setScene(scene);
+            stage.setTitle("Send new message to queue " + queue.getName());
+            stage.show();
 
-			// Client connection (host, port, channel).
+            if (log.isDebugEnabled())
+                log.debug("Send new message to queue " + queue.getName());
+        }
+    }
 
-			agent = new PCFMessageAgent(brokerHostname, brokerPort, brokerChannel);
+    @FXML
+    private void refreshButtonAction(ActionEvent event) {
+        ObservableList<QueueDescriptor> rows = FXCollections.observableArrayList();
+        rows.addAll(getQueues());
+        table.setItems(rows);
+    }
 
-			PCFMessage request = new PCFMessage(CMQCFC.MQCMD_INQUIRE_Q);
+    private boolean doMQSet(QueueDescriptor queueDescriptor) {
 
-			request.addParameter(CMQC.MQCA_Q_NAME, "*");
-			request.addParameter(CMQC.MQIA_Q_TYPE, MQConstants.MQQT_LOCAL);
-			//			request.addFilterParameter(CMQC.MQIA_CURRENT_Q_DEPTH, CMQCFC.MQCFOP_GREATER, 0);
+        try {
+            int shareability = queueDescriptor.getIsSherable().booleanValue() ? MQConstants.MQQA_SHAREABLE : MQConstants.MQQA_NOT_SHAREABLE;
+            MQQueue queue = qm.accessQueue(queueDescriptor.getName(), MQConstants.MQOO_SET);
+            queue.set(new int[]{MQConstants.MQIA_SHAREABILITY}, new int[]{shareability}, new byte[]{});
+            queue.close();
+            return true;
 
-			PCFMessage[] responses = agent.send(request);
+        } catch (MQException mqe) {
+            if (log.isErrorEnabled())
+                log.error(mqe + ": " + PCFConstants.lookupReasonCode(mqe.reasonCode));
+            NotificationPopup popup = new NotificationPopup(getStage());
+            popup.display(mqe + ": " + PCFConstants.lookupReasonCode(mqe.reasonCode));
+            return false;
+        }
+    }
 
-			for (int i = 0; i < responses.length; i++) {
-				PCFMessage response = responses[i];
+    private List<QueueDescriptor> getQueues() {
 
-				QueueDescriptor queue = new QueueDescriptor();
-				String qName = (String) response.getParameterValue(CMQC.MQCA_Q_NAME);
-				if (qName != null) {
+        List<QueueDescriptor> queueList = new ArrayList<QueueDescriptor>();
+        try {
+            PCFMessageAgent agent;
 
-					String qDesc = (String) response.getParameterValue(CMQC.MQCA_Q_DESC);
+            // Client connection (host, port, channel).
 
-					queue.setName(qName.trim());
-					queue.setDescription(qDesc.trim());
-					queue.setDept((Integer) response.getParameterValue(CMQC.MQIA_CURRENT_Q_DEPTH));
-					Integer sharability = (Integer) response.getParameterValue(CMQC.MQIA_SHAREABILITY); // CMQC.MQQA_NOT_SHAREABLE = 0 / CMQC.MQQA_SHAREABLE = 1;
-					if(sharability.intValue() == CMQC.MQQA_SHAREABLE)
-						queue.setIsSherable(Boolean.TRUE);
-					else
-						queue.setIsSherable(Boolean.FALSE);
+            //agent = new PCFMessageAgent(brokerHostname, brokerPort, brokerChannel);
+            agent = new PCFMessageAgent(qm);
 
-					queueList.add(queue);
-				}
+            PCFMessage request = new PCFMessage(CMQCFC.MQCMD_INQUIRE_Q);
 
-				//				System.out.println("Queue " + response.getParameterValue(CMQC.MQCA_Q_NAME) + " depth "
-				//						+ response.getParameterValue(CMQC.MQIA_CURRENT_Q_DEPTH));
-			}
+            request.addParameter(CMQC.MQCA_Q_NAME, "*");
+            request.addParameter(CMQC.MQIA_Q_TYPE, MQConstants.MQQT_LOCAL);
+            //			request.addFilterParameter(CMQC.MQIA_CURRENT_Q_DEPTH, CMQCFC.MQCFOP_GREATER, 0);
 
-			if (log.isDebugEnabled())
-				log.debug(responses.length + (responses.length == 1 ? " active queue" : " active queues"));
-		}
+            PCFMessage[] responses = agent.send(request);
 
-		catch (MQException mqe) {
-			if (log.isErrorEnabled())
-				log.error(mqe + ": " + PCFConstants.lookupReasonCode(mqe.reasonCode));
-			NotificationPopup popup = new NotificationPopup(getStage());
-			popup.display(mqe + ": " + PCFConstants.lookupReasonCode(mqe.reasonCode));
-		}
+            for (int i = 0; i < responses.length; i++) {
+                PCFMessage response = responses[i];
 
-		catch (IOException ioe) {
-			if (log.isErrorEnabled())
-				log.error(ioe.getMessage());
-			NotificationPopup popup = new NotificationPopup(getStage());
-			popup.display(ioe.getMessage());
-		}
+                QueueDescriptor queue = new QueueDescriptor();
+                String qName = (String) response.getParameterValue(CMQC.MQCA_Q_NAME);
+                if (qName != null) {
 
-		return queueList;
-	}
+                    String qDesc = (String) response.getParameterValue(CMQC.MQCA_Q_DESC);
 
-	public MessageListenerController getMessageListenerController() {
-		return messageListenerController;
-	}
-	
-	public void setStage(Stage stage) {
-		this.stage = stage;
-	}
-	
-	private Stage getStage() {
-		return stage;
-	}
+                    queue.setName(qName.trim());
+                    queue.setDescription(qDesc.trim());
+                    queue.setDept((Integer) response.getParameterValue(CMQC.MQIA_CURRENT_Q_DEPTH));
+                    Integer sharability = (Integer) response.getParameterValue(CMQC.MQIA_SHAREABILITY); // CMQC.MQQA_NOT_SHAREABLE = 0 / CMQC.MQQA_SHAREABLE = 1;
+                    if (sharability.intValue() == CMQC.MQQA_SHAREABLE)
+                        queue.setIsSherable(Boolean.TRUE);
+                    else
+                        queue.setIsSherable(Boolean.FALSE);
+
+                    queueList.add(queue);
+                }
+
+                //				System.out.println("Queue " + response.getParameterValue(CMQC.MQCA_Q_NAME) + " depth "
+                //						+ response.getParameterValue(CMQC.MQIA_CURRENT_Q_DEPTH));
+            }
+
+            if (log.isDebugEnabled())
+                log.debug(responses.length + (responses.length == 1 ? " active queue" : " active queues"));
+        } catch (MQException mqe) {
+            if (log.isErrorEnabled())
+                log.error(mqe + ": " + PCFConstants.lookupReasonCode(mqe.reasonCode));
+            NotificationPopup popup = new NotificationPopup(getStage());
+            popup.display(mqe + ": " + PCFConstants.lookupReasonCode(mqe.reasonCode));
+        } catch (IOException ioe) {
+            if (log.isErrorEnabled())
+                log.error(ioe.getMessage());
+            NotificationPopup popup = new NotificationPopup(getStage());
+            popup.display(ioe.getMessage());
+        }
+
+        return queueList;
+    }
+
+    public MessageListenerController getMessageListenerController() {
+        return messageListenerController;
+    }
+
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
+    private Stage getStage() {
+        return stage;
+    }
 }

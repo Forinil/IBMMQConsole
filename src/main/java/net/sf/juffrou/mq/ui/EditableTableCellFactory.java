@@ -7,24 +7,24 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextField;
 import javafx.util.Callback;
 
-public class EditableTableCellFactory <S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
+public class EditableTableCellFactory<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
     public EditableTableCellFactory() {
     }
 
     @Override
     public TableCell<S, T> call(TableColumn<S, T> p) {
-    	return new EditingCell();
+        return new EditingCell();
     }
-    
-    
+
+
     private class EditingCell extends TableCell<S, T> {
 
         private TextField textField;
-        
+
         public EditingCell() {
         }
- 
+
         @Override
         public void startEdit() {
             if (!isEmpty()) {
@@ -35,19 +35,19 @@ public class EditableTableCellFactory <S, T> implements Callback<TableColumn<S, 
                 textField.selectAll();
             }
         }
- 
+
         @Override
         public void cancelEdit() {
             super.cancelEdit();
- 
+
             setText((String) getItem());
             setGraphic(null);
         }
- 
+
         @Override
         public void updateItem(T item, boolean empty) {
             super.updateItem(item, empty);
- 
+
             if (empty) {
                 setText(null);
                 setGraphic(null);
@@ -64,21 +64,21 @@ public class EditableTableCellFactory <S, T> implements Callback<TableColumn<S, 
                 }
             }
         }
- 
+
         private void createTextField() {
             textField = new TextField(getString());
-            textField.setMinWidth(this.getWidth() - this.getGraphicTextGap()* 2);
-            textField.focusedProperty().addListener(new ChangeListener<Boolean>(){
+            textField.setMinWidth(this.getWidth() - this.getGraphicTextGap() * 2);
+            textField.focusedProperty().addListener(new ChangeListener<Boolean>() {
                 @Override
-                public void changed(ObservableValue<? extends Boolean> arg0, 
-                    Boolean arg1, Boolean arg2) {
-                        if (!arg2) {
-                            commitEdit((T)textField.getText());
-                        }
+                public void changed(ObservableValue<? extends Boolean> arg0,
+                                    Boolean arg1, Boolean arg2) {
+                    if (!arg2) {
+                        commitEdit((T) textField.getText());
+                    }
                 }
             });
         }
- 
+
         private String getString() {
             return getItem() == null ? "" : getItem().toString();
         }

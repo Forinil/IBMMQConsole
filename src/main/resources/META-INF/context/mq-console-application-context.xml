@@ -20,6 +20,8 @@
 		</entry>
 		<entry key="channel" value="${broker_channel}" />
 		<entry key="transport" value="MQSeries Client" />
+		<entry key="userID" value="${broker_username}" />
+		<entry key="password" value="${broker_password}" />
 	</util:map>
 	
 	<!-- Scans the framework for annotated classes(beans!) -->

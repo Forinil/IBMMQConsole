@@ -1,44 +1,44 @@
 package net.sf.juffrou.mq.dom;
 
 public class HeaderDescriptor {
-	
-	public static final String HEADER_MESSAGE_ID = "MessageId";
-	public static final String HEADER_CORRELATION_ID = "CorrelationId";
-	public static final String HEADER_PUT_DATETIME = "PutDateTime";
-	public static final String HEADER_SEQUENCE_ID = "sequenceId";
-	public static final String HEADER_SEQUENCE_NUMBER = "sequenceNumber";
-	public static final String HEADER_SEQUENCE_SIZE = "sequenceSize";
-	public static final String HEADER_EXPIRATION_DATE = "EXPIRATION_DATE";
 
-	private String name;
-	private Object value;
+    public static final String HEADER_MESSAGE_ID = "MessageId";
+    public static final String HEADER_CORRELATION_ID = "CorrelationId";
+    public static final String HEADER_PUT_DATETIME = "PutDateTime";
+    public static final String HEADER_SEQUENCE_ID = "sequenceId";
+    public static final String HEADER_SEQUENCE_NUMBER = "sequenceNumber";
+    public static final String HEADER_SEQUENCE_SIZE = "sequenceSize";
+    public static final String HEADER_EXPIRATION_DATE = "EXPIRATION_DATE";
 
-	public HeaderDescriptor() {
-	}
+    private String name;
+    private Object value;
 
-	public HeaderDescriptor(String name, Object value) {
-		this.name = name;
-		this.value = value;
-	}
+    public HeaderDescriptor() {
+    }
 
-	public String getName() {
-		return name;
-	}
+    public HeaderDescriptor(String name, Object value) {
+        this.name = name;
+        this.value = value;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public Object getValue() {
-		return value;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public String getValueAsString() {
-		return value != null ? value.toString() : "";
-	}
+    public Object getValue() {
+        return value;
+    }
 
-	public void setValue(Object value) {
-		this.value = value;
-	}
+    public String getValueAsString() {
+        return value != null ? value.toString() : "";
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
+    }
 
 }

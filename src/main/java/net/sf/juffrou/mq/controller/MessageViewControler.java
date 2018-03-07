@@ -12,58 +12,61 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TitledPane;
 import net.sf.juffrou.mq.dom.HeaderDescriptor;
 import net.sf.juffrou.mq.dom.MessageDescriptor;
-
 import org.springframework.stereotype.Component;
 
 @Component
 public class MessageViewControler {
 
-	@FXML
-	private Accordion messageAccordion;
+    @FXML
+    private Accordion messageAccordion;
 
-	@FXML
-	private TitledPane payloadPane;
+    @FXML
+    private TitledPane payloadPane;
 
-	@FXML
-	private TableView<HeaderDescriptor> headersTable;
+    @FXML
+    private TableView<HeaderDescriptor> headersTable;
 
-	@FXML
-	private TextArea payload;
+    @FXML
+    private TextArea payload;
 
-	private MessageDescriptor messageDescriptor;
+    private MessageDescriptor messageDescriptor;
 
-	public MessageDescriptor getMessageDescriptor() {
-		return messageDescriptor;
-	}
+    public MessageDescriptor getMessageDescriptor() {
+        return messageDescriptor;
+    }
 
-	public void setMessageDescriptor(MessageDescriptor messageDescriptor) {
-		this.messageDescriptor = messageDescriptor;
-	}
+    public void setMessageDescriptor(MessageDescriptor messageDescriptor) {
+        this.messageDescriptor = messageDescriptor;
+    }
 
-	public void initialize() {
-		
-		// prevent all panes inside the accordion to collapse
-		messageAccordion.expandedPaneProperty().addListener(new ChangeListener<TitledPane>() {
-	        @Override public void changed(ObservableValue<? extends TitledPane> property, final TitledPane oldPane, final TitledPane newPane) {
-	          if (oldPane != null) oldPane.setCollapsible(true);
-	          if (newPane != null) Platform.runLater(new Runnable() { @Override public void run() { 
-	            newPane.setCollapsible(false); 
-	          }});
-	        }
-	      });
+    public void initialize() {
 
-		messageAccordion.setExpandedPane(payloadPane);
+        // prevent all panes inside the accordion to collapse
+        messageAccordion.expandedPaneProperty().addListener(new ChangeListener<TitledPane>() {
+            @Override
+            public void changed(ObservableValue<? extends TitledPane> property, final TitledPane oldPane, final TitledPane newPane) {
+                if (oldPane != null) oldPane.setCollapsible(true);
+                if (newPane != null) Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        newPane.setCollapsible(false);
+                    }
+                });
+            }
+        });
 
-		if (messageDescriptor != null) {
-			payload.setText(messageDescriptor.getText());
+        messageAccordion.setExpandedPane(payloadPane);
 
-			headersTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        if (messageDescriptor != null) {
+            payload.setText(messageDescriptor.getText());
 
-			ObservableList<HeaderDescriptor> rows = FXCollections.observableArrayList();
-			rows.addAll(messageDescriptor.getHeaders());
-			headersTable.setItems(rows);
-			payloadPane.setExpanded(true);
-		}
-	}
+            headersTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+            ObservableList<HeaderDescriptor> rows = FXCollections.observableArrayList();
+            rows.addAll(messageDescriptor.getHeaders());
+            headersTable.setItems(rows);
+            payloadPane.setExpanded(true);
+        }
+    }
 
 }

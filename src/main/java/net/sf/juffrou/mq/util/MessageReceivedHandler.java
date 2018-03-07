@@ -5,8 +5,8 @@ import net.sf.juffrou.mq.dom.MessageDescriptor;
 
 public interface MessageReceivedHandler {
 
-	void messageReceived(MessageDescriptor messageDescriptor);
+    void messageReceived(MessageDescriptor messageDescriptor);
 
-	Stage getStage();
+    Stage getStage();
 
 }
